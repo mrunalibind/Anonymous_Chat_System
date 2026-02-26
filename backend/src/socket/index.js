@@ -1,4 +1,7 @@
 const { Server } = require('socket.io');
+const { handleNewConnection, handleDisconnect, activeChats, handleSkip, startSearching, activeSessions } = require('./matchmaking');
+
+const { handleSendMessage } = require('./chatHandler');
 
 let io;
 
@@ -10,10 +13,26 @@ const initSocket = (server) => {
   });
 
   io.on('connection', (socket) => {
-    console.log('User connected:', socket.id);
 
-    socket.on('disconnect', () => {
-      console.log('User disconnected:', socket.id);
+    socket.activeChats = activeChats;
+    socket.activeSessions = activeSessions;
+
+    handleNewConnection(io, socket);
+
+    socket.on('start_search', async () => {
+        await startSearching(io, socket);
+    });
+
+    socket.on('send_message', async (message) => {
+      await handleSendMessage(io, socket, message);
+    });
+
+    socket.on('skip', async () => {
+        await handleSkip(io, socket);
+    });
+
+    socket.on('disconnect', async() => {
+      await handleDisconnect(io, socket);
     });
   });
 };
