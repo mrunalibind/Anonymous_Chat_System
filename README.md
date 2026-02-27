@@ -27,6 +27,7 @@ Database (MySQL) → Railway
   - Active chats
   - Waiting queue
   - Active sessions
+  - Rate limiter tracking
 
 ### Frontend
 - React (Vite)
@@ -66,7 +67,7 @@ Database (MySQL) → Railway
 - ⏭️ Skip partner functionality
 - 🔌 Automatic disconnect handling
 - 🛡️ Sliding window rate limiting (5 messages / 3 seconds)
-- 🗃️ Chat session logging in database
+- 🗃️ Chat session & message persistence in MySQL
 - 📦 Production-ready deployment setup
 - 🌍 Environment-based configuration
 
@@ -92,10 +93,14 @@ This ensures FIFO-based random matching.
 ## Messaging Flow
 
 1. User sends message → `send_message`
-2. Server checks rate limit
-3. Server forwards message to matched partner
-4. Partner receives `receive_message`
-5. UI updates in real time
+2. Server validates:
+   - Message type
+   - Message length
+   - Rate limit
+3. Message is stored in MySQL (`messages` table)
+4. Server forwards message to matched partner
+5. Partner receives `receive_message`
+6. UI updates in real time
 
 ---
 
@@ -186,12 +191,12 @@ Frontend Deployment
 ## ⚠️ Known Limitations
 
 1. In-Memory Matchmaking
-   - Does not scale across multiple backend instances
-   - Horizontal scaling would require Redis or shared state
+   - waitingQueue, activeChats, and activeSessions are stored in memory.
+   - If the server restarts, all active chats are lost.
 
 2. No Message Persistence
-   - Messages are not stored
-   - Chat history is lost after disconnect
+   - Messages are stored in MySQL
+   - However, chat history is not automatically fetched if a user reconnects.
 
 3. No Authentication
    - Fully anonymous
