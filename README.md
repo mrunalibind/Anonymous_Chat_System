@@ -9,15 +9,33 @@ Users can connect randomly, chat instantly, skip partners, and experience rate-l
 
 Frontend: https://taptalent-frontend-1.onrender.com/ 
 
-Backend: https://taptalent-backend.onrender.com
+Backend: https://taptalent-backend.onrender.com 
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Project Architecture
 
 Frontend (React + Vite) → Render (Static Site)  
 Backend (Node.js + Express + Socket.io) → Render (Web Service)  
-Database (MySQL) → Railway  
+Database (MySQL) → Railway 
+
+### Backend
+- Node.js + Express server
+- Socket.io for real-time communication
+- MySQL for session storage
+- In-memory structures for:
+  - Active chats
+  - Waiting queue
+  - Active sessions
+  - Rate limiter tracking
+
+### Frontend
+- React (Vite)
+- Component-based structure:
+  - `ChatBox`
+  - `MessageInput`
+  - `StatusBar`
+- Socket connection handled in parent component
 
 ---
 
@@ -45,47 +63,67 @@ Database (MySQL) → Railway
 
 - 🔁 Random user matching
 - 💬 Real-time messaging
+- ⌨️ Typing indicator
 - ⏭️ Skip partner functionality
 - 🔌 Automatic disconnect handling
-- 🛡️ Sliding window rate limiting (5 messages / 3 seconds)
-- 🗃️ Chat session logging in database
+- 🛡️ Sliding window rate limiting
+- 🗃️ Chat session & message persistence in MySQL
 - 📦 Production-ready deployment setup
 - 🌍 Environment-based configuration
+- 👤 API Endpoint to check user connection stats:
+  - Method: GET: https://taptalent-backend.onrender.com/stats
+  - Response:
+    ```
+    {
+      "totalConnections": total_connection_made,
+      "totalMatches": total_matches_made,
+      "activeChats": active_matches_chats,
+      "waitingQueue": user_waiting
+    }
+    ```
 
 ---
 
-## 🔒 Rate Limiting
+## 💬 Matchmaking Logic
 
-Implemented a sliding window rate limiter using in-memory Map.
+When a user starts searching:
 
-- Limit: 5 messages
-- Time Window: 3 seconds
-- Prevents spam and abuse
-- Cleans up on disconnect
+- If waitingQueue is empty:
+  - User is added to queue
+- If another user is waiting:
+  - Both users are paired
+  - A new session ID is generated
+  - Session stored in MySQL
+  - `activeChats` and `activeSessions` updated
+  - Both users receive `matched` event
+
+This ensures FIFO-based random matching.
 
 ---
 
-## 🗄️ Database Schema
+## Messaging Flow
 
-### chat_sessions
+1. User sends message → `send_message`
+2. Server validates:
+   - Message type
+   - Message length
+   - Rate limit
+3. Message is stored in MySQL (`messages` table)
+4. Server forwards message to matched partner
+5. Partner receives `receive_message`
+6. UI updates in real time
 
-| Column | Type |
-|--------|------|
-| id | VARCHAR(36) |
-| user1_socket_id | VARCHAR(50) |
-| user2_socket_id | VARCHAR(50) |
-| started_at | TIMESTAMP |
-| ended_at | TIMESTAMP |
+---
 
-### messages
+## Typing Indicator Flow
 
-| Column | Type |
-|--------|------|
-| id | INT (Auto Increment) |
-| session_id | VARCHAR(36) |
-| sender_socket_id | VARCHAR(50) |
-| message | TEXT |
-| created_at | TIMESTAMP |
+1. User types → emits `typing`
+2. Server forwards to partner
+3. Partner sees "Typing..."
+4. After inactivity → `stop_typing`
+5. Indicator removed
+
+Lightweight events are used to reduce server overhead.
 
 ---
 
@@ -133,3 +171,51 @@ npm install
 ```bash
 npm run dev
 ```
+
+---
+
+### 7️⃣ Deployment (Render)
+
+Backend Deployment
+
+- Create new Web Service
+- Connect GitHub repository
+
+- Set:
+
+    Build Command: npm install
+
+    Start Command: node src/server.js
+
+- Add environment variables in Render dashboard
+
+Frontend Deployment
+
+- Create new Static Site
+
+- Build Command: npm install && npm run build
+
+- Publish Directory: dist
+
+---
+
+## ⚠️ Known Limitations
+
+1. In-Memory Matchmaking
+   - waitingQueue, activeChats, and activeSessions are stored in memory.
+   - If the server restarts, all active chats are lost.
+
+2. No Message Persistence
+   - Messages are stored in MySQL
+   - However, chat history is not automatically fetched if a user reconnects.
+
+3. No Authentication
+   - Fully anonymous
+   - No user identity tracking
+
+4. Single Region Deployment
+   - Latency may increase for global users
+
+5. Basic Rate Limiting
+   - Stored in memory
+   - Not distributed-safe
