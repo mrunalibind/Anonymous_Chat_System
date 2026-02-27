@@ -45,6 +45,7 @@ Database (MySQL) → Railway
 
 - 🔁 Random user matching
 - 💬 Real-time messaging
+- ⌨️ Typing indicator
 - ⏭️ Skip partner functionality
 - 🔌 Automatic disconnect handling
 - 🛡️ Sliding window rate limiting (5 messages / 3 seconds)
@@ -54,38 +55,65 @@ Database (MySQL) → Railway
 
 ---
 
-## 🔒 Rate Limiting
+## Matchmaking Logic
 
-Implemented a sliding window rate limiter using in-memory Map.
+When a user starts searching:
 
-- Limit: 5 messages
-- Time Window: 3 seconds
-- Prevents spam and abuse
-- Cleans up on disconnect
+- If waitingQueue is empty:
+  - User is added to queue
+- If another user is waiting:
+  - Both users are paired
+  - A new session ID is generated
+  - Session stored in MySQL
+  - `activeChats` and `activeSessions` updated
+  - Both users receive `matched` event
+
+This ensures FIFO-based random matching.
 
 ---
 
-## 🗄️ Database Schema
+## 🏗️ Project Architecture
 
-### chat_sessions
+### Backend
+- Node.js + Express server
+- Socket.io for real-time communication
+- MySQL for session storage
+- In-memory structures for:
+  - Active chats
+  - Waiting queue
+  - Active sessions
 
-| Column | Type |
-|--------|------|
-| id | VARCHAR(36) |
-| user1_socket_id | VARCHAR(50) |
-| user2_socket_id | VARCHAR(50) |
-| started_at | TIMESTAMP |
-| ended_at | TIMESTAMP |
+### Frontend
+- React (Vite)
+- Component-based structure:
+  - `ChatBox`
+  - `MessageInput`
+  - `StatusBar`
+- Socket connection handled in parent component
+  
+---
 
-### messages
+---
 
-| Column | Type |
-|--------|------|
-| id | INT (Auto Increment) |
-| session_id | VARCHAR(36) |
-| sender_socket_id | VARCHAR(50) |
-| message | TEXT |
-| created_at | TIMESTAMP |
+## Messaging Flow
+
+1. User sends message → `send_message`
+2. Server checks rate limit
+3. Server forwards message to matched partner
+4. Partner receives `receive_message`
+5. UI updates in real time
+
+---
+
+## Typing Indicator Flow
+
+1. User types → emits `typing`
+2. Server forwards to partner
+3. Partner sees "Typing..."
+4. After inactivity → `stop_typing`
+5. Indicator removed
+
+Lightweight events are used to reduce server overhead.
 
 ---
 
@@ -133,3 +161,51 @@ npm install
 ```bash
 npm run dev
 ```
+
+---
+
+### 7️⃣ Deployment (Render)
+
+Backend Deployment
+
+- Create new Web Service
+- Connect GitHub repository
+
+- Set:
+
+    Build Command: npm install
+
+    Start Command: node src/server.js
+
+- Add environment variables in Render dashboard
+
+Frontend Deployment
+
+- Create new Static Site
+
+- Build Command: npm install && npm run build
+
+- Publish Directory: dist
+
+---
+
+## ⚠️ Known Limitations
+
+1. In-Memory Matchmaking
+   - Does not scale across multiple backend instances
+   - Horizontal scaling would require Redis or shared state
+
+2. No Message Persistence
+   - Messages are not stored
+   - Chat history is lost after disconnect
+
+3. No Authentication
+   - Fully anonymous
+   - No user identity tracking
+
+4. Single Region Deployment
+   - Latency may increase for global users
+
+5. Basic Rate Limiting
+   - Stored in memory
+   - Not distributed-safe
