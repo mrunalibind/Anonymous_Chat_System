@@ -66,10 +66,21 @@ Database (MySQL) → Railway
 - ⌨️ Typing indicator
 - ⏭️ Skip partner functionality
 - 🔌 Automatic disconnect handling
-- 🛡️ Sliding window rate limiting (5 messages / 3 seconds)
+- 🛡️ Sliding window rate limiting
 - 🗃️ Chat session & message persistence in MySQL
 - 📦 Production-ready deployment setup
 - 🌍 Environment-based configuration
+- 👤 API Endpoint to check user connection stats:
+  - Method: GET: https://taptalent-backend.onrender.com/stats
+  - Response:
+    ```
+    {
+      "totalConnections": total_connection_made,
+      "totalMatches": total_matches_made,
+      "activeChats": active_matches_chats,
+      "waitingQueue": user_waiting
+    }
+    ```
 
 ---
 
