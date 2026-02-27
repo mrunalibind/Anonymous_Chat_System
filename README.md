@@ -9,15 +9,32 @@ Users can connect randomly, chat instantly, skip partners, and experience rate-l
 
 Frontend: https://taptalent-frontend-1.onrender.com/ 
 
-Backend: https://taptalent-backend.onrender.com
+Backend: https://taptalent-backend.onrender.com 
 
 ---
 
-## 🏗️ Architecture
+## 🏗️ Project Architecture
 
 Frontend (React + Vite) → Render (Static Site)  
 Backend (Node.js + Express + Socket.io) → Render (Web Service)  
-Database (MySQL) → Railway  
+Database (MySQL) → Railway 
+
+### Backend
+- Node.js + Express server
+- Socket.io for real-time communication
+- MySQL for session storage
+- In-memory structures for:
+  - Active chats
+  - Waiting queue
+  - Active sessions
+
+### Frontend
+- React (Vite)
+- Component-based structure:
+  - `ChatBox`
+  - `MessageInput`
+  - `StatusBar`
+- Socket connection handled in parent component
 
 ---
 
@@ -55,7 +72,7 @@ Database (MySQL) → Railway
 
 ---
 
-## Matchmaking Logic
+## 💬 Matchmaking Logic
 
 When a user starts searching:
 
@@ -69,29 +86,6 @@ When a user starts searching:
   - Both users receive `matched` event
 
 This ensures FIFO-based random matching.
-
----
-
-## 🏗️ Project Architecture
-
-### Backend
-- Node.js + Express server
-- Socket.io for real-time communication
-- MySQL for session storage
-- In-memory structures for:
-  - Active chats
-  - Waiting queue
-  - Active sessions
-
-### Frontend
-- React (Vite)
-- Component-based structure:
-  - `ChatBox`
-  - `MessageInput`
-  - `StatusBar`
-- Socket connection handled in parent component
-  
----
 
 ---
 
