@@ -126,6 +126,30 @@ async function handleSkip(io, socket) {
     console.log(`User ${socket.id} skipped chat`);
 }
 
+function handleTyping(io, socket) {
+    const partnerId = activeChats.get(socket.id);
+
+    if (!partnerId) return;
+
+    const partnerSocket = io.sockets.sockets.get(partnerId);
+
+    if (partnerSocket) {
+        partnerSocket.emit('partner_typing');
+    }
+}
+
+function handleStopTyping(io, socket) {
+    const partnerId = activeChats.get(socket.id);
+
+    if (!partnerId) return;
+
+    const partnerSocket = io.sockets.sockets.get(partnerId);
+
+    if (partnerSocket) {
+        partnerSocket.emit('partner_stop_typing');
+    }
+}
+
 function getTotalConnections() {
     return totalConnections;
 }
@@ -144,4 +168,6 @@ module.exports = {
     getTotalMatches,
     getTotalConnections,
     waitingQueue,
+    handleTyping,
+    handleStopTyping,
 };
