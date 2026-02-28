@@ -191,6 +191,8 @@ Backend Deployment
 
 Frontend Deployment
 
+- ⚠️ In frontent, change socket url from localhost to deployed backend url 
+
 - Create new Static Site
 
 - Build Command: npm install && npm run build
